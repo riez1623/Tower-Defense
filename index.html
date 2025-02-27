@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tower Defense Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f3f4f6;
+        }
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-top: 30px;
+        }
+        #game-board {
+            width: 600px;
+            height: 400px;
+            background-color: #eeeeee;
+            border: 2px solid #333;
+            position: relative;
+            overflow: hidden;
+        }
+        .tower {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background-color: #4CAF50;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+        .enemy {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-color: red;
+            border-radius: 50%;
+        }
+        .info-panel {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            width: 600px;
+        }
+        .info-panel div {
+            font-size: 18px;
+        }
+        .upgrade-btn {
+            background-color: #FFD700;
+            color: black;
+            padding: 5px;
+            border: none;
+            margin-top: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .upgrade-btn:hover {
+            background-color: #FFDF00;
+        }
+        .tower-type {
+            width: 40px;
+            height: 40px;
+            position: absolute;
+            border-radius: 50%;
+            background-color: green;
+        }
+        .tower-type.range {
+            background-color: #2196F3;
+        }
+        .tower-type.shooter {
+            background-color: #FF5722;
+        }
+        .tower-type.explosive {
+            background-color: #FF9800;
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <h1>Tower Defense Game</h1>
+    <div id="game-board"></div>
+    <div class="info-panel">
+        <div id="money">Money: $100</div>
+        <div id="health">Health: 20</div>
+        <div id="wave">Wave: 1</div>
+    </div>
+    <button class="upgrade-btn" id="upgradeBtn">Upgrade Tower</button>
+</div>
+
+<script>
+// Game variables
+let money = 100;
+let health = 20;
+let wave = 1;
+let towers = [];
+let enemies = [];
+let enemySpeed = 1;
+let interval;
+
+// Create a simple enemy that moves along the path
+function createEnemy() {
+    const enemy = document.createElement('div');
+    enemy.classList.add('enemy');
+    enemy.style.top = '50%';  // Start in the middle of the board
+    enemy.style.left = '0%';
+    document.getElementById('game-board').appendChild(enemy);
+    enemies.push(enemy);
+    moveEnemy(enemy);
+}
+
+// Tower creation (range, shooter, explosive)
+function createTower(x, y, type) {
+    const tower = document.createElement('div');
+    tower.classList.add('tower');
+    tower.style.left = `${x}px`;
+    tower.style.top = `${y}px`;
+
+    // Assign tower types and their effects
+    if (type === 'range') {
+        tower.classList.add('tower-type', 'range');
+        tower.damage = 2;  // Range tower has low damage
+        tower.range = 150;  // Medium range
+    } else if (type === 'shooter') {
+        tower.classList.add('tower-type', 'shooter');
+        tower.damage = 4;  // Shooter tower has higher damage
+        tower.range = 100;  // Short range
+    } else if (type === 'explosive') {
+        tower.classList.add('tower-type', 'explosive');
+        tower.damage = 5;  // Explosive tower has highest damage
+        tower.range = 50;  // Very short range
+    }
+
+    tower.onclick = function() {
+        // Upgrade tower logic
+        upgradeTower(tower);
+    };
+
+    document.getElementById('game-board').appendChild(tower);
+    towers.push(tower);
+}
+
+// Handle placing towers (clicking on the map)
+document.getElementById('game-board').addEventListener('click', (event) => {
+    const x = event.offsetX - 20; // Adjust position for center alignment
+    const y = event.offsetY - 20; // Adjust position for center alignment
+
+    if (money >= 50) {  // Each tower costs $50
+        createTower(x, y, 'range');  // Example tower (range type)
+        money -= 50;  // Deduct money for placing the tower
+        document.getElementById('money').textContent = `Money: $${money}`;
+    }
+});
+
+// Upgrade tower function
+function upgradeTower(tower) {
+    if (money >= 30) {
+        tower.damage += 2;  // Increase damage
+        tower.range += 20;  // Increase range
+        money -= 30;  // Deduct money for upgrading
+        document.getElementById('money').textContent = `Money: $${money}`;
+    }
+}
+
+// Move the enemies along the path
+function moveEnemy(enemy) {
+    const enemyInterval = setInterval(() => {
+        const currentLeft = parseFloat(enemy.style.left);
+        if (currentLeft < 100) {
+            enemy.style.left = `${currentLeft + enemySpeed}%`;
+        } else {
+            clearInterval(enemyInterval);
+            health -= 1;
+            document.getElementById('health').textContent = `Health: ${health}`;
+            enemy.remove();  // Remove enemy once it reaches the end
+            if (health <= 0) {
+                gameOver();
+            }
+        }
+    }, 100);  // Move every 100ms
+}
+
+// Start new wave with more enemies
+setInterval(() => {
+    if (health > 0) {
+        createEnemy();
+        wave++;
+        document.getElementById('wave').textContent = `Wave: ${wave}`;
+    }
+}, 3000);
+
+// Game Over screen
+function gameOver() {
+    alert("Game Over! You lost all your health.");
+    resetGame();
+}
+
+// Reset the game
+function resetGame() {
+    money = 100;
+    health = 20;
+    wave = 1;
+    towers = [];
+    enemies = [];
+    document.getElementById('money').textContent = `Money: $${money}`;
+    document.getElementById('health').textContent = `Health: ${health}`;
+    document.getElementById('wave').textContent = `Wave: ${wave}`;
+    document.getElementById('game-board').innerHTML = '';  // Clear the game board
+}
+
+</script>
+
+</body>
+</html>
