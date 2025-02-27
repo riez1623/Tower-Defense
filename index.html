@@ -42,27 +42,13 @@
             border: 2px solid black;
             display: none; /* Hide the game initially */
         }
-        .tower {
-            position: absolute;
-            width: 60px;
-            height: 60px;
-            background-color: blue;
-            cursor: pointer;
-            border-radius: 10px;
-        }
         .enemy {
             position: absolute;
             width: 40px;
             height: 40px;
             background-color: red;
             border-radius: 50%;
-        }
-        .bullet {
-            position: absolute;
-            width: 12px;
-            height: 12px;
-            background-color: green;
-            border-radius: 50%;
+            cursor: pointer;
         }
         .base {
             position: absolute;
@@ -79,15 +65,6 @@
             left: 20px;
             color: black;
             font-size: 18px;
-        }
-        .upgrade-button {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px;
-            cursor: pointer;
         }
         .path-marker {
             position: absolute;
@@ -111,14 +88,12 @@
 <div class="ui" id="score">Score: 0</div>
 <div class="ui" id="health">Health: 20</div>
 <div class="ui" id="money">Money: 0</div>
-<div class="upgrade-button" id="upgrade-button">Upgrade Tower</div>
 
 <script>
     const gameContainer = document.getElementById("game-container");
     const scoreDisplay = document.getElementById("score");
     const healthDisplay = document.getElementById("health");
     const moneyDisplay = document.getElementById("money");
-    const upgradeButton = document.getElementById("upgrade-button");
     const introScreen = document.getElementById("intro-screen");
     const playButton = document.getElementById("play-button");
 
@@ -126,8 +101,6 @@
     let health = 20;
     let money = 0;
 
-    const towers = [];
-    const bullets = [];
     const enemies = [];
 
     // Base location
@@ -177,68 +150,6 @@
         });
     }
 
-    // Bullet shooting logic
-    function shootBullets() {
-        towers.forEach(tower => {
-            enemies.forEach(enemy => {
-                let ex = parseFloat(enemy.element.style.left);
-                let ey = parseFloat(enemy.element.style.top);
-                let tx = tower.x;
-                let ty = tower.y;
-
-                let dx = ex - tx;
-                let dy = ey - ty;
-                let distance = Math.sqrt(dx * dx + dy * dy);
-
-                if (distance < tower.range) { // Towers attack within range
-                    const bullet = document.createElement("div");
-                    bullet.classList.add("bullet");
-                    bullet.style.left = `${tx}px`;
-                    bullet.style.top = `${ty}px`;
-                    gameContainer.appendChild(bullet);
-                    bullets.push({ element: bullet, target: enemy });
-                    money += 5;  // Gain money for shooting
-                    moneyDisplay.textContent = `Money: ${money}`;
-                }
-            });
-        });
-    }
-
-    // Move bullets towards enemies
-    function moveBullets() {
-        bullets.forEach(bullet => {
-            const target = bullet.target.element;
-            let bx = parseFloat(bullet.element.style.left);
-            let by = parseFloat(bullet.element.style.top);
-            let tx = parseFloat(target.style.left);
-            let ty = parseFloat(target.style.top);
-
-            let dx = tx - bx;
-            let dy = ty - by;
-            let distance = Math.sqrt(dx * dx + dy * dy);
-            let speed = 3;
-
-            if (distance > speed) {
-                let moveX = (dx / distance) * speed;
-                let moveY = (dy / distance) * speed;
-                bullet.element.style.left = bx + moveX + "px";
-                bullet.element.style.top = by + moveY + "px";
-            } else {
-                // Enemy is hit
-                target.style.backgroundColor = "purple"; // Change color to indicate hit
-                bullet.target.health -= 5; // Reduce enemy health based on tower damage
-                if (bullet.target.health <= 0) {
-                    target.remove();
-                    bullet.target.element.remove();
-                    enemies.splice(enemies.indexOf(bullet.target), 1); // Remove enemy
-                    score += 10;
-                    scoreDisplay.textContent = `Score: ${score}`;
-                }
-                bullet.element.remove();
-            }
-        });
-    }
-
     // Wave system for spawning enemies
     function startWave() {
         let waveInterval = setInterval(() => {
@@ -261,14 +172,21 @@
         enemy.element.style.left = `${paths[0].x}px`;
         enemy.element.style.top = `${paths[0].y}px`;
         gameContainer.appendChild(enemy.element);
+        
+        // Allow clicking on the enemy to destroy it
+        enemy.element.addEventListener('click', function() {
+            enemy.element.remove(); // Remove the enemy from the screen
+            enemies.splice(enemies.indexOf(enemy), 1); // Remove it from the array
+            score += 10; // Increase score for killing an enemy
+            scoreDisplay.textContent = `Score: ${score}`;
+        });
+
         enemies.push(enemy);
     }
 
     // Game loop
     function gameLoop() {
         moveEnemies();
-        moveBullets();
-        shootBullets();
         if (health > 0) {
             requestAnimationFrame(gameLoop);
         } else {
@@ -284,37 +202,9 @@
         gameLoop();   // Start the game loop
     }
 
-    // Tower upgrade function
-    function upgradeTower() {
-        if (money >= 50) {
-            // Upgrade the first tower in the list for now (could be made dynamic)
-            let tower = towers[0];
-            tower.level += 1;
-            tower.range += 50;
-            tower.damage += 5;
-            money -= 50;
-            moneyDisplay.textContent = `Money: ${money}`;
-        } else {
-            alert("Not enough money to upgrade!");
-        }
-    }
-
-    // Event listener for placing towers
-    gameContainer.addEventListener('click', function(e) {
-        const x = e.offsetX;
-        const y = e.offsetY;
-
-        // Allow tower placement only on specific areas (non-path area)
-        if (x < 950 && y < 600) {
-            createTower(x, y);
-        }
-    });
-
     // Start the game when the "Play" button is clicked
     playButton.addEventListener('click', startGame);
 
-    // Upgrade tower on button click
-    upgradeButton.addEventListener('click', upgradeTower);
 </script>
 
 </body>
