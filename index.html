@@ -32,6 +32,13 @@
             color: white;
             border: none;
             cursor: pointer;
+            margin: 20px;
+        }
+        #intro-screen p {
+            font-size: 20px;
+            max-width: 600px;
+            text-align: center;
+            margin-top: 20px;
         }
         #game-container {
             width: 1200px;
@@ -49,6 +56,11 @@
             background-color: red;
             border-radius: 50%;
             cursor: pointer;
+        }
+        .big-enemy {
+            background-color: purple;
+            width: 60px;
+            height: 60px;
         }
         .base {
             position: absolute;
@@ -73,6 +85,15 @@
             background-color: blue;
             border-radius: 50%;
         }
+        .game-over, .you-win {
+            font-size: 48px;
+            color: green;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -81,6 +102,13 @@
 <div id="intro-screen">
     <h1>Ultimate Tower Defense</h1>
     <button id="play-button">Play</button>
+    <p><strong>How to Play:</strong></p>
+    <p>
+        - Click on enemies to destroy them. Each click gives you points.<br>
+        - New enemies will spawn every few seconds.<br>
+        - After killing enough enemies, new paths will open, and stronger enemies will appear.<br>
+        - The game ends when a big enemy reaches your base, or you win by defeating the final boss!
+    </p>
 </div>
 
 <!-- Game Container (hidden initially) -->
@@ -88,6 +116,8 @@
 <div class="ui" id="score">Score: 0</div>
 <div class="ui" id="health">Health: 20</div>
 <div class="ui" id="money">Money: 0</div>
+<div id="game-over" class="game-over">Game Over!</div>
+<div id="you-win" class="you-win">You Win!</div>
 
 <script>
     const gameContainer = document.getElementById("game-container");
@@ -96,10 +126,13 @@
     const moneyDisplay = document.getElementById("money");
     const introScreen = document.getElementById("intro-screen");
     const playButton = document.getElementById("play-button");
+    const gameOverText = document.getElementById("game-over");
+    const youWinText = document.getElementById("you-win");
 
     let score = 0;
     let health = 20;
     let money = 0;
+    let enemyKillCount = 0;
 
     const enemies = [];
 
@@ -108,25 +141,39 @@
     base.classList.add("base");
     gameContainer.appendChild(base);
 
-    // Predefined path points for enemies to follow
+    // Predefined path points for enemies to follow (First path)
     const paths = [
         { x: 0, y: 200 }, { x: 400, y: 200 }, { x: 400, y: 400 }, { x: 950, y: 400 }, { x: 950, y: 500 }
     ];
 
-    // Create path markers for visibility
-    paths.forEach(path => {
-        const marker = document.createElement("div");
-        marker.classList.add("path-marker");
-        marker.style.left = `${path.x - 5}px`; // Center the marker
-        marker.style.top = `${path.y - 5}px`; // Center the marker
-        gameContainer.appendChild(marker);
-    });
+    // Predefined second path (spawn after 5-10 kills)
+    const paths2 = [
+        { x: 0, y: 100 }, { x: 200, y: 300 }, { x: 500, y: 300 }, { x: 950, y: 450 }
+    ];
 
-    // Enemy movement along the path
+    // Create path markers for visibility
+    function createPathMarkers(path) {
+        path.forEach(pathPoint => {
+            const marker = document.createElement("div");
+            marker.classList.add("path-marker");
+            marker.style.left = `${pathPoint.x - 5}px`;
+            marker.style.top = `${pathPoint.y - 5}px`;
+            gameContainer.appendChild(marker);
+        });
+    }
+
+    createPathMarkers(paths); // Initial path markers
+
+    // Function to move enemies along the path
     function moveEnemies() {
         enemies.forEach(enemy => {
-            if (enemy.pathIndex < paths.length - 1) {
-                const target = paths[enemy.pathIndex + 1];
+            let currentPath = paths;
+            if (enemy.pathIndex >= 10) { // Start using the second path after 5-10 kills
+                currentPath = paths2;
+            }
+
+            if (enemy.pathIndex < currentPath.length - 1) {
+                const target = currentPath[enemy.pathIndex + 1];
                 let dx = target.x - parseFloat(enemy.element.style.left);
                 let dy = target.y - parseFloat(enemy.element.style.top);
                 let distance = Math.sqrt(dx * dx + dy * dy);
@@ -172,16 +219,52 @@
         enemy.element.style.left = `${paths[0].x}px`;
         enemy.element.style.top = `${paths[0].y}px`;
         gameContainer.appendChild(enemy.element);
-        
+
         // Allow clicking on the enemy to destroy it
         enemy.element.addEventListener('click', function() {
             enemy.element.remove(); // Remove the enemy from the screen
             enemies.splice(enemies.indexOf(enemy), 1); // Remove it from the array
             score += 10; // Increase score for killing an enemy
+            enemyKillCount++;
             scoreDisplay.textContent = `Score: ${score}`;
+
+            // Add a new path after 5-10 kills
+            if (enemyKillCount >= 5 && enemyKillCount < 10) {
+                createPathMarkers(paths2); // Create a second path
+            }
+
+            // Spawn big enemy after 20 kills
+            if (enemyKillCount >= 20) {
+                createBigEnemy();
+            }
         });
 
         enemies.push(enemy);
+    }
+
+    // Function to create a big enemy after 20 kills
+    function createBigEnemy() {
+        const bigEnemy = {
+            element: document.createElement("div"),
+            pathIndex: 0,
+            health: 50
+        };
+        bigEnemy.element.classList.add("big-enemy");
+        bigEnemy.element.style.left = `${paths[0].x}px`;
+        bigEnemy.element.style.top = `${paths[0].y}px`;
+        gameContainer.appendChild(bigEnemy.element);
+
+        // Allow clicking on the big enemy to destroy it
+        bigEnemy.element.addEventListener('click', function() {
+            bigEnemy.health -= 10; // Decrease health in chunks
+            if (bigEnemy.health <= 0) {
+                bigEnemy.element.remove();
+                enemies.splice(enemies.indexOf(bigEnemy), 1);
+                youWinText.style.display = "block"; // Show "You Win!"
+            }
+        });
+
+        enemies.push(bigEnemy);
     }
 
     // Game loop
@@ -190,7 +273,7 @@
         if (health > 0) {
             requestAnimationFrame(gameLoop);
         } else {
-            alert('Game Over!');
+            gameOverText.style.display = "block"; // Show "Game Over!"
         }
     }
 
