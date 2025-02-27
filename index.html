@@ -12,11 +12,12 @@
             background-color: #f0f0f0;
         }
         #game-container {
-            width: 1000px;
-            height: 600px;
+            width: 1200px;
+            height: 700px;
             margin: 20px auto;
             background-color: #e0e0e0;
             position: relative;
+            border: 2px solid black;
         }
         .tower {
             position: absolute;
@@ -38,6 +39,15 @@
             height: 12px;
             background-color: green;
             border-radius: 50%;
+        }
+        .base {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background-color: yellow;
+            border-radius: 50%;
+            left: 1050px;
+            top: 300px;
         }
         .ui {
             position: absolute;
@@ -79,8 +89,15 @@
     const towers = [];
     const bullets = [];
     const enemies = [];
+
+    // Base location
+    const base = document.createElement("div");
+    base.classList.add("base");
+    gameContainer.appendChild(base);
+
+    // Predefined path points
     const paths = [
-        { x: 0, y: 200 }, { x: 250, y: 200 }, { x: 250, y: 400 }, { x: 750, y: 400 }, { x: 750, y: 600 }
+        { x: 0, y: 200 }, { x: 400, y: 200 }, { x: 400, y: 400 }, { x: 950, y: 400 }, { x: 950, y: 500 }
     ];
 
     // Enemy constructor
@@ -103,7 +120,7 @@
         towers.push({ element: tower, x: x, y: y, level: 1, range: 200, damage: 10 });
     }
 
-    // Move the enemies along the path
+    // Enemy movement along the path
     function moveEnemies() {
         enemies.forEach(enemy => {
             if (enemy.pathIndex < paths.length - 1) {
@@ -122,7 +139,7 @@
                     enemy.pathIndex++;
                 }
             } else {
-                // Enemy reaches the end of the path (game over)
+                // Enemy reaches the base
                 health -= 1;
                 healthDisplay.textContent = `Health: ${health}`;
                 enemy.element.remove();
@@ -131,7 +148,7 @@
         });
     }
 
-    // Tower shooting logic
+    // Bullet shooting logic
     function shootBullets() {
         towers.forEach(tower => {
             enemies.forEach(enemy => {
@@ -188,6 +205,17 @@
         });
     }
 
+    // Wave system for spawning enemies
+    function startWave() {
+        let waveInterval = setInterval(() => {
+            if (enemies.length < 10) { // Limit the number of enemies per wave
+                createEnemy();
+            } else {
+                clearInterval(waveInterval); // Stop spawning after 10 enemies
+            }
+        }, 1000); // Spawn a new enemy every second
+    }
+
     // Game loop
     function gameLoop() {
         moveEnemies();
@@ -200,13 +228,10 @@
         }
     }
 
-    // Start the game
+    // Start the game and wave system
     function startGame() {
-        createTower(150, 250);
-        createTower(600, 450);
-        createEnemy();
-        createEnemy();
-        gameLoop();
+        startWave();  // Start the first wave
+        gameLoop();   // Start the game loop
     }
 
     // Tower upgrade function
@@ -223,6 +248,17 @@
             alert("Not enough money to upgrade!");
         }
     }
+
+    // Event listener for placing towers
+    gameContainer.addEventListener('click', function(e) {
+        const x = e.offsetX;
+        const y = e.offsetY;
+
+        // Allow tower placement only on specific area (not on the path)
+        if (x >= 50 && x <= 950 && y >= 50 && y <= 600) {
+            createTower(x, y);
+        }
+    });
 
     // Event listener for the upgrade button
     upgradeButton.addEventListener("click", upgradeTower);
