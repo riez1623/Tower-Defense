@@ -11,6 +11,28 @@
             padding: 0;
             background-color: #f0f0f0;
         }
+        #intro-screen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        #intro-screen h1 {
+            font-size: 48px;
+        }
+        #intro-screen button {
+            font-size: 24px;
+            padding: 15px 30px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
         #game-container {
             width: 1200px;
             height: 700px;
@@ -18,6 +40,7 @@
             background-color: #e0e0e0;
             position: relative;
             border: 2px solid black;
+            display: none; /* Hide the game initially */
         }
         .tower {
             position: absolute;
@@ -77,6 +100,13 @@
 </head>
 <body>
 
+<!-- Intro Screen -->
+<div id="intro-screen">
+    <h1>Ultimate Tower Defense</h1>
+    <button id="play-button">Play</button>
+</div>
+
+<!-- Game Container (hidden initially) -->
 <div id="game-container"></div>
 <div class="ui" id="score">Score: 0</div>
 <div class="ui" id="health">Health: 20</div>
@@ -89,6 +119,8 @@
     const healthDisplay = document.getElementById("health");
     const moneyDisplay = document.getElementById("money");
     const upgradeButton = document.getElementById("upgrade-button");
+    const introScreen = document.getElementById("intro-screen");
+    const playButton = document.getElementById("play-button");
 
     let score = 0;
     let health = 20;
@@ -116,26 +148,6 @@
         marker.style.top = `${path.y - 5}px`; // Center the marker
         gameContainer.appendChild(marker);
     });
-
-    // Enemy constructor
-    function createEnemy() {
-        const enemy = document.createElement("div");
-        enemy.classList.add("enemy");
-        enemy.style.left = `${paths[0].x}px`;
-        enemy.style.top = `${paths[0].y}px`;
-        gameContainer.appendChild(enemy);
-        enemies.push({ element: enemy, pathIndex: 0, health: 100, type: 'normal' });
-    }
-
-    // Tower constructor
-    function createTower(x, y) {
-        const tower = document.createElement("div");
-        tower.classList.add("tower");
-        tower.style.left = `${x - 30}px`;
-        tower.style.top = `${y - 30}px`;
-        gameContainer.appendChild(tower);
-        towers.push({ element: tower, x: x, y: y, level: 1, range: 200, damage: 10 });
-    }
 
     // Enemy movement along the path
     function moveEnemies() {
@@ -241,8 +253,8 @@
     // Game loop
     function gameLoop() {
         moveEnemies();
-        shootBullets();
         moveBullets();
+        shootBullets();
         if (health > 0) {
             requestAnimationFrame(gameLoop);
         } else {
@@ -252,6 +264,8 @@
 
     // Start the game and wave system
     function startGame() {
+        introScreen.style.display = "none"; // Hide intro screen
+        gameContainer.style.display = "block"; // Show the game container
         startWave();  // Start the first wave
         gameLoop();   // Start the game loop
     }
@@ -282,11 +296,8 @@
         }
     });
 
-    // Start the game when the page loads
-    window.onload = function() {
-        healthDisplay.textContent = `Health: ${health}`;  // Ensure health display is initialized
-        startGame();
-    };
+    // Start the game when the "Play" button is clicked
+    playButton.addEventListener('click', startGame);
 
     // Upgrade tower on button click
     upgradeButton.addEventListener('click', upgradeTower);
