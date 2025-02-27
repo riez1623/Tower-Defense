@@ -103,6 +103,7 @@ let towers = [];
 let enemies = [];
 let enemySpeed = 1;
 let interval;
+let attackInterval;
 
 // Create a simple enemy that moves along the path
 function createEnemy() {
@@ -110,6 +111,7 @@ function createEnemy() {
     enemy.classList.add('enemy');
     enemy.style.top = '50%';  // Start in the middle of the board
     enemy.style.left = '0%';
+    enemy.health = 10;  // Each enemy has some health
     document.getElementById('game-board').appendChild(enemy);
     enemies.push(enemy);
     moveEnemy(enemy);
@@ -144,6 +146,9 @@ function createTower(x, y, type) {
 
     document.getElementById('game-board').appendChild(tower);
     towers.push(tower);
+
+    // Start attacking after a short delay
+    setInterval(() => attackEnemies(tower), 1000);
 }
 
 // Handle placing towers (clicking on the map)
@@ -184,6 +189,30 @@ function moveEnemy(enemy) {
             }
         }
     }, 100);  // Move every 100ms
+}
+
+// Tower attack logic
+function attackEnemies(tower) {
+    for (let i = 0; i < enemies.length; i++) {
+        const enemy = enemies[i];
+
+        // Calculate distance from tower to enemy
+        const dx = parseFloat(enemy.style.left) - parseFloat(tower.style.left);
+        const dy = parseFloat(enemy.style.top) - parseFloat(tower.style.top);
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        // If enemy is within range, attack it
+        if (distance <= tower.range) {
+            enemy.health -= tower.damage;
+
+            // If enemy's health reaches 0, remove it
+            if (enemy.health <= 0) {
+                enemy.remove();
+                enemies.splice(i, 1);  // Remove from enemies array
+                i--;  // Adjust index after removal
+            }
+        }
+    }
 }
 
 // Start new wave with more enemies
