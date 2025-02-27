@@ -94,6 +94,16 @@
             transform: translate(-50%, -50%);
             display: none;
         }
+        .how-to-play {
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .mechanics {
+            display: none;
+            font-size: 18px;
+            max-width: 600px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -102,8 +112,9 @@
 <div id="intro-screen">
     <h1>Ultimate Tower Defense</h1>
     <button id="play-button">Play</button>
-    <p><strong>How to Play:</strong></p>
-    <p>
+    <p><span class="how-to-play">How to Play</span></p>
+    <p class="mechanics">
+        <strong>Game Mechanics:</strong><br>
         - Click on enemies to destroy them. Each click gives you points.<br>
         - New enemies will spawn every few seconds.<br>
         - After killing enough enemies, new paths will open, and stronger enemies will appear.<br>
@@ -128,6 +139,8 @@
     const playButton = document.getElementById("play-button");
     const gameOverText = document.getElementById("game-over");
     const youWinText = document.getElementById("you-win");
+    const howToPlay = document.querySelector(".how-to-play");
+    const mechanics = document.querySelector(".mechanics");
 
     let score = 0;
     let health = 20;
@@ -287,6 +300,11 @@
 
     // Start the game when the "Play" button is clicked
     playButton.addEventListener('click', startGame);
+
+    // Show game mechanics when "How to Play" is clicked
+    howToPlay.addEventListener('click', function() {
+        mechanics.style.display = 'block';
+    });
 
 </script>
 
