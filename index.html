@@ -212,12 +212,17 @@
                 bullet.element.style.left = bx + moveX + "px";
                 bullet.element.style.top = by + moveY + "px";
             } else {
-                target.remove();
+                // Enemy is hit
+                target.style.backgroundColor = "purple"; // Change color to indicate hit
+                bullet.target.health -= tower.damage; // Reduce enemy health based on tower damage
+                if (bullet.target.health <= 0) {
+                    target.remove();
+                    bullet.target.element.remove();
+                    enemies.splice(enemies.indexOf(bullet.target), 1); // Remove enemy
+                    score += 10;
+                    scoreDisplay.textContent = `Score: ${score}`;
+                }
                 bullet.element.remove();
-                bullet.target.element.remove();
-                enemies.splice(enemies.indexOf(bullet.target), 1); // Remove enemy
-                score += 10;
-                scoreDisplay.textContent = `Score: ${score}`;
             }
         });
     }
@@ -279,6 +284,7 @@
 
     // Start the game when the page loads
     window.onload = function() {
+        healthDisplay.textContent = `Health: ${health}`;  // Ensure health display is initialized
         startGame();
     };
 
