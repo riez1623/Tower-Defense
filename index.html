@@ -57,11 +57,6 @@
             border-radius: 50%;
             cursor: pointer;
         }
-        .big-enemy {
-            background-color: purple;
-            width: 60px;
-            height: 60px;
-        }
         .base {
             position: absolute;
             width: 100px;
@@ -117,8 +112,8 @@
         <strong>Game Mechanics:</strong><br>
         - Click on enemies to destroy them. Each click gives you points.<br>
         - New enemies will spawn every few seconds.<br>
-        - After killing enough enemies, new paths will open, and stronger enemies will appear.<br>
-        - The game ends when a big enemy reaches your base, or you win by defeating the final boss!
+        - After killing enough enemies, new paths will open, and more enemies will appear.<br>
+        - The game ends when all enemies are defeated, or the base's health reaches 0.
     </p>
 </div>
 
@@ -128,7 +123,6 @@
 <div class="ui" id="health">Health: 20</div>
 <div class="ui" id="money">Money: 0</div>
 <div id="game-over" class="game-over">Game Over!</div>
-<div id="you-win" class="you-win">You Win!</div>
 
 <script>
     const gameContainer = document.getElementById("game-container");
@@ -138,7 +132,6 @@
     const introScreen = document.getElementById("intro-screen");
     const playButton = document.getElementById("play-button");
     const gameOverText = document.getElementById("game-over");
-    const youWinText = document.getElementById("you-win");
     const howToPlay = document.querySelector(".how-to-play");
     const mechanics = document.querySelector(".mechanics");
 
@@ -146,23 +139,15 @@
     let health = 20;
     let money = 0;
     let enemyKillCount = 0;
-
-    const enemies = [];
+    let paths = [
+        [{ x: 0, y: 200 }, { x: 400, y: 200 }, { x: 400, y: 400 }, { x: 950, y: 400 }, { x: 950, y: 500 }]
+    ]; // Starting path
+    let enemies = [];
 
     // Base location
     const base = document.createElement("div");
     base.classList.add("base");
     gameContainer.appendChild(base);
-
-    // Predefined path points for enemies to follow (First path)
-    const paths = [
-        { x: 0, y: 200 }, { x: 400, y: 200 }, { x: 400, y: 400 }, { x: 950, y: 400 }, { x: 950, y: 500 }
-    ];
-
-    // Predefined second path (spawn after 5-10 kills)
-    const paths2 = [
-        { x: 0, y: 100 }, { x: 200, y: 300 }, { x: 500, y: 300 }, { x: 950, y: 450 }
-    ];
 
     // Create path markers for visibility
     function createPathMarkers(path) {
@@ -175,15 +160,13 @@
         });
     }
 
-    createPathMarkers(paths); // Initial path markers
+    // Initial path markers
+    createPathMarkers(paths[0]);
 
     // Function to move enemies along the path
     function moveEnemies() {
         enemies.forEach(enemy => {
-            let currentPath = paths;
-            if (enemy.pathIndex >= 10) { // Start using the second path after 5-10 kills
-                currentPath = paths2;
-            }
+            const currentPath = paths[enemy.pathIndex >= 10 ? 1 : 0]; // Use second path after 10 kills
 
             if (enemy.pathIndex < currentPath.length - 1) {
                 const target = currentPath[enemy.pathIndex + 1];
@@ -229,8 +212,8 @@
             health: 10
         };
         enemy.element.classList.add("enemy");
-        enemy.element.style.left = `${paths[0].x}px`;
-        enemy.element.style.top = `${paths[0].y}px`;
+        enemy.element.style.left = `${paths[0][0].x}px`;
+        enemy.element.style.top = `${paths[0][0].y}px`;
         gameContainer.appendChild(enemy.element);
 
         // Allow clicking on the enemy to destroy it
@@ -241,43 +224,20 @@
             enemyKillCount++;
             scoreDisplay.textContent = `Score: ${score}`;
 
-            // Add a new path after 5-10 kills
-            if (enemyKillCount >= 5 && enemyKillCount < 10) {
-                createPathMarkers(paths2); // Create a second path
-            }
-
-            // Spawn big enemy after 20 kills
-            if (enemyKillCount >= 20) {
-                createBigEnemy();
+            // Add a new path after 10 kills
+            if (enemyKillCount % 10 === 0) {
+                const newPath = [
+                    { x: 0, y: 100 },
+                    { x: 250, y: 200 },
+                    { x: 500, y: 200 },
+                    { x: 950, y: 400 }
+                ];
+                paths.push(newPath); // Add new path to the game
+                createPathMarkers(newPath); // Create path markers for the new path
             }
         });
 
         enemies.push(enemy);
-    }
-
-    // Function to create a big enemy after 20 kills
-    function createBigEnemy() {
-        const bigEnemy = {
-            element: document.createElement("div"),
-            pathIndex: 0,
-            health: 50
-        };
-        bigEnemy.element.classList.add("big-enemy");
-        bigEnemy.element.style.left = `${paths[0].x}px`;
-        bigEnemy.element.style.top = `${paths[0].y}px`;
-        gameContainer.appendChild(bigEnemy.element);
-
-        // Allow clicking on the big enemy to destroy it
-        bigEnemy.element.addEventListener('click', function() {
-            bigEnemy.health -= 10; // Decrease health in chunks
-            if (bigEnemy.health <= 0) {
-                bigEnemy.element.remove();
-                enemies.splice(enemies.indexOf(bigEnemy), 1);
-                youWinText.style.display = "block"; // Show "You Win!"
-            }
-        });
-
-        enemies.push(bigEnemy);
     }
 
     // Game loop
